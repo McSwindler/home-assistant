@@ -6,7 +6,7 @@
 	url = https://github.com/balloob/pywemo.git
 [submodule "homeassistant/external/netdisco"]
 	path = homeassistant/external/netdisco
-	url = https://github.com/McSwindler/netdisco.git
+	url = https://github.com/balloob/netdisco.git
 [submodule "homeassistant/external/noop"]
 	path = homeassistant/external/noop
 	url = https://github.com/balloob/noop.git
