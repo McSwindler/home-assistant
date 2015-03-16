@@ -49,6 +49,9 @@ class HomeAssistant(object):
         self.bus = EventBus(pool)
         self.services = ServiceRegistry(self.bus, pool)
         self.states = StateMachine(self.bus)
+        
+        # Global Settings dict
+        self.settings = {}
 
         # List of loaded components
         self.components = []
@@ -448,7 +451,7 @@ class State(object):
         self.entity_id = entity_id.lower()
         self.state = state
         self.attributes = attributes or {}
-        self.last_updated = dt.datetime.now()
+        self.last_updated = dt.datetime.utcnow()
 
         # Strip microsecond from last_changed else we cannot guarantee
         # state == State.from_dict(state.as_dict())
@@ -469,7 +472,7 @@ class State(object):
         return {'entity_id': self.entity_id,
                 'state': self.state,
                 'attributes': self.attributes,
-                'last_changed': util.datetime_to_str(self.last_changed)}
+                'last_changed': self.last_changed.isoformat()}
 
     @classmethod
     def from_dict(cls, json_dict):

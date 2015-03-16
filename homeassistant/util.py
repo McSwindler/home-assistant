@@ -14,13 +14,17 @@ import enum
 import socket
 import random
 import string
+import decimal
 from functools import wraps
 
 RE_SANITIZE_FILENAME = re.compile(r'(~|\.\.|/|\\)')
 RE_SANITIZE_PATH = re.compile(r'(~|\.(\.)+)')
 RE_SLUGIFY = re.compile(r'[^A-Za-z0-9_]+')
 
-DATE_STR_FORMAT = "%H:%M:%S %d-%m-%Y"
+DATE_STR_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
+THIRTYTWO = decimal.Decimal(32)
+ONEPOINTEIGHT = decimal.Decimal(18) / decimal.Decimal(10)
 
 
 def sanitize_filename(filename):
@@ -45,7 +49,7 @@ def datetime_to_str(dattim):
 
     @rtype : str
     """
-    return dattim.strftime(DATE_STR_FORMAT)
+    return dattim.isoformat()
 
 
 def str_to_datetime(dt_str):
@@ -82,6 +86,30 @@ def repr_helper(inp):
         return datetime_to_str(inp)
     else:
         return str(inp)
+
+def f_to_c(temp):
+    if type(temp) is tuple or type(temp) is list:
+        l = []
+        for t in temp:
+            l.append(f_to_c(t))
+        return tuple(l)
+    elif temp:
+        temp = decimal.Decimal(temp)
+        return float(round((temp - THIRTYTWO) / ONEPOINTEIGHT, 1))
+    else:
+        return None
+
+def c_to_f(temp):
+    if type(temp) is tuple or type(temp) is list:
+        l = []
+        for t in temp:
+            l.append(c_to_f(t))
+        return tuple(l)
+    elif temp:
+        temp = decimal.Decimal(temp)
+        return float(round(temp * ONEPOINTEIGHT + THIRTYTWO, 1))
+    else:
+        return None
 
 
 # Taken from: http://www.cse.unr.edu/~quiroz/inc/colortransforms.py
@@ -318,10 +346,10 @@ class Throttle(object):
                     # Check if method is never called or no_throttle is given
                     force = not last_call or kwargs.pop('no_throttle', False)
 
-                    if force or datetime.now() - last_call > self.min_time:
+                    if force or datetime.utcnow() - last_call > self.min_time:
 
                         result = method(*args, **kwargs)
-                        wrapper.last_call = datetime.now()
+                        wrapper.last_call = datetime.utcnow()
                         return result
                     else:
                         return None
@@ -436,7 +464,7 @@ class ThreadPool(object):
                 return
 
             # Add to current running jobs
-            job_log = (datetime.now(), job)
+            job_log = (datetime.utcnow(), job)
             self.current_jobs.append(job_log)
 
             # Do the job

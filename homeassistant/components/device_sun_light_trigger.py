@@ -115,7 +115,7 @@ def setup(hass, config):
            new_state.state == STATE_HOME:
 
             # These variables are needed for the elif check
-            now = datetime.now()
+            now = datetime.utcnow()
             start_point = calc_time_for_light_when_sunset()
 
             # Do we need lights?

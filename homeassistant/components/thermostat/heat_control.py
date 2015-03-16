@@ -116,36 +116,31 @@ class HeatControl(ThermostatDevice):
     def name(self):
         """ Returns the name. """
         return self.name_device
-
+    
     @property
-    def unit_of_measurement(self):
-        """ Returns the unit of measurement. """
-        return TEMP_CELCIUS
-
-    @property
-    def current_temperature(self):
+    def _current_temperature(self):
         """ Returns the current temperature. """
         target_sensor = self.hass.states.get(self.target_sensor_entity_id)
         if target_sensor:
             return float(target_sensor.state)
         else:
             return None
-
+        
     @property
-    def target_temperature(self):
+    def _target_temperature(self):
         """ Returns the temperature we try to reach. """
         if self._manual_sat_temp:
             return self._manual_sat_temp
         elif self._away:
             return self.min_temp
         else:
-            now = datetime.datetime.time(datetime.datetime.now())
+            now = datetime.datetime.time(datetime.datetime.utcnow())
             for (start_time, end_time, temp) in self.time_temp:
                 if start_time < now and end_time > now:
                     return temp
             return self.min_temp
 
-    def set_temperature(self, temperature):
+    def _set_temperature(self, temperature):
         """ Set new target temperature """
         if temperature is None:
             self._manual_sat_temp = None

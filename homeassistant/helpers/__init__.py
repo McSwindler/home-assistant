@@ -55,7 +55,7 @@ class TrackStates(object):
         self.states = []
 
     def __enter__(self):
-        self.now = datetime.now()
+        self.now = datetime.utcnow()
         return self.states
 
     def __exit__(self, exc_type, exc_value, traceback):

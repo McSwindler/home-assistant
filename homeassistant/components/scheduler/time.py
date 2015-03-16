@@ -45,14 +45,14 @@ class TimeEventListener(ServiceEventListener):
     def schedule(self, hass):
         """ Schedule this event so that it will be called """
 
-        next_time = datetime.now().replace(hour=self.hour,
+        next_time = datetime.utcnow().replace(hour=self.hour,
                                            minute=self.minute,
                                            second=self.second,
                                            microsecond=0)
 
         # Calculate the next time the event should be executed.
         # That is the next day that the schedule is configured to run
-        while next_time < datetime.now() or \
+        while next_time < datetime.utcnow() or \
                 next_time.weekday() not in self.my_schedule.days:
 
             next_time = next_time + timedelta(days=1)
