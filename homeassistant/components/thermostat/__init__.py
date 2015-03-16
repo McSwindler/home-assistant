@@ -78,8 +78,11 @@ def setup(hass, config):
                     thermostat.turn_away_mode_off()
 
         elif service.service == SERVICE_SET_TEMPERATURE:
-            temperature = util.convert(
-                service.data.get(ATTR_TEMPERATURE), float)
+            temp = service.data.get(ATTR_TEMPERATURE)
+            if type(temp) is list:
+                temperature = util.convert(temp, tuple)
+            else:
+                temperature = util.convert(temp, float)
 
             if temperature is None:
                 return

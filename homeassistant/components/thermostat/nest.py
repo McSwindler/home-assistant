@@ -5,6 +5,13 @@ import logging
 
 from homeassistant.components.thermostat import ThermostatDevice
 from homeassistant.const import (CONF_USERNAME, CONF_PASSWORD, CONF_UNIT, TEMP_CELCIUS, TEMP_FAHRENHEIT)
+try:
+    from nest.utils import c_to_f
+    from nest.utils import f_to_c
+except ImportError:
+    logger.exception(
+            "Error while importing dependency nest. "
+            "Did you maybe not install the python-nest dependency?")
 
 
 # pylint: disable=unused-argument
@@ -41,7 +48,6 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
 
 class NestThermostat(ThermostatDevice):
-    from nest.utils import c_to_f
     """ Represents a Nest thermostat within Home Assistant. """
 
     def __init__(self, structure, device, unit):
@@ -77,7 +83,7 @@ class NestThermostat(ThermostatDevice):
     def current_temperature(self):
         """ Returns the current temperature. """
         if self.unit == 'F':
-            temperature = self.c_to_f(self.device.temperature)
+            temperature = c_to_f(self.device.temperature)
         else:
             temperature = self.device.temperature
         return round(temperature, 1)
@@ -89,13 +95,13 @@ class NestThermostat(ThermostatDevice):
             list = []
             for t in self.device.target:
                 if self.unit == 'F':
-                    t = self.c_to_f(t)
+                    t = c_to_f(t)
                 list.append(round(t, 1))
             return list
         else:
             t = self.device.target
             if self.unit == 'F':
-                t = self.c_to_f(t)
+                t = c_to_f(t)
             return round(t, 1)
 
     @property
@@ -106,7 +112,10 @@ class NestThermostat(ThermostatDevice):
     def set_temperature(self, temperature):
         """ Set new target temperature """
         if self.unit == 'F':
-            temperature = nest_utils.f_to_c(temperature)
+            if type(temperature) is tuple:
+                    temperature = (f_to_c(temperature[0]), f_to_c(temperature[1]))
+            else:
+                temperature = f_to_c(temperature)
         self.device.target = temperature
 
     def turn_away_mode_on(self):
