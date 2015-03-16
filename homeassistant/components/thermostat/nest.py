@@ -4,7 +4,7 @@ Adds support for Nest thermostats.
 import logging
 
 from homeassistant.components.thermostat import ThermostatDevice
-from homeassistant.const import (CONF_USERNAME, CONF_PASSWORD, TEMP_CELCIUS)
+from homeassistant.const import (CONF_USERNAME, CONF_PASSWORD, CONF_UNIT, TEMP_CELCIUS, TEMP_FAHRENHEIT)
 
 
 # pylint: disable=unused-argument
@@ -22,6 +22,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
     try:
         import nest
+        from nest import utils as nest_utils
     except ImportError:
         logger.exception(
             "Error while importing dependency nest. "
@@ -30,9 +31,11 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         return
 
     napi = nest.Nest(username, password)
+    
+    unit = config.get(CONF_UNIT) or 'C'
 
     add_devices([
-        NestThermostat(structure, device)
+        NestThermostat(structure, device, unit.upper())
         for structure in napi.structures
         for device in structure.devices
     ])
@@ -41,9 +44,10 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 class NestThermostat(ThermostatDevice):
     """ Represents a Nest thermostat within Home Assistant. """
 
-    def __init__(self, structure, device):
+    def __init__(self, structure, device, unit):
         self.structure = structure
         self.device = device
+        self.unit = unit
 
     @property
     def name(self):
@@ -53,7 +57,10 @@ class NestThermostat(ThermostatDevice):
     @property
     def unit_of_measurement(self):
         """ Returns the unit of measurement. """
-        return TEMP_CELCIUS
+        if self.unit == 'F':
+            return TEMP_FAHRENHEIT
+        else:
+            return TEMP_CELCIUS
 
     @property
     def device_state_attributes(self):
@@ -69,12 +76,27 @@ class NestThermostat(ThermostatDevice):
     @property
     def current_temperature(self):
         """ Returns the current temperature. """
-        return round(self.device.temperature, 1)
+        if self.unit == 'F':
+            temperature = nest_utils.c_to_f(self.device.temperature)
+        else:
+            temperature = self.device.temperature
+        return round(temperature, 1)
 
     @property
     def target_temperature(self):
         """ Returns the temperature we try to reach. """
-        return round(self.device.target, 1)
+        if type(self.device.target) is tuple:
+            list = []
+            for t in self.device.target:
+                if self.unit == 'F':
+                    t = nest_utils.c_to_f(t)
+                list.append(round(t, 1))
+            return list
+        else:
+            t = self.device.target
+            if self.unit == 'F':
+                t = nest_utils.c_to_f(t)
+            return round(t, 1)
 
     @property
     def is_away_mode_on(self):
@@ -83,6 +105,8 @@ class NestThermostat(ThermostatDevice):
 
     def set_temperature(self, temperature):
         """ Set new target temperature """
+        if self.unit == 'F':
+            temperature = nest_utils.f_to_c(temperature)
         self.device.target = temperature
 
     def turn_away_mode_on(self):

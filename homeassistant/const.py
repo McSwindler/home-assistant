@@ -8,6 +8,7 @@ DEVICE_DEFAULT_NAME = "Unnamed Device"
 # #### CONFIG ####
 CONF_LATITUDE = "latitude"
 CONF_LONGITUDE = "longitude"
+CONF_UNIT = "unit"
 
 CONF_PLATFORM = "platform"
 CONF_HOST = "host"
