@@ -9,6 +9,7 @@ from itertools import chain
 import threading
 import queue
 from datetime import datetime, timedelta
+from math import floor
 import re
 import enum
 import socket
@@ -110,6 +111,11 @@ def c_to_f(temp):
         return float(round(temp * ONEPOINTEIGHT + THIRTYTWO, 1))
     else:
         return None
+
+EPOCH = datetime.utcfromtimestamp(0)
+def utc_to_timestamp(dt):
+    sec = floor((dt - EPOCH).total_seconds())
+    return int(sec)
 
 
 # Taken from: http://www.cse.unr.edu/~quiroz/inc/colortransforms.py

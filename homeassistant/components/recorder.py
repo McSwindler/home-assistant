@@ -16,6 +16,7 @@ import atexit
 import math
 
 from homeassistant import Event, EventOrigin, State
+from homeassistant.util import utc_to_timestamp
 from homeassistant.remote import JSONEncoder
 from homeassistant.const import (
     MATCH_ALL, EVENT_TIME_CHANGED, EVENT_STATE_CHANGED,
@@ -61,7 +62,7 @@ def row_to_state(row):
     """ Convert a databsae row to a state. """
     try:
         return State(
-            row[1], row[2], json.loads(row[3]), datetime.fromtimestamp(row[4]))
+            row[1], row[2], json.loads(row[3]), datetime.utcfromtimestamp(row[4]))
     except ValueError:
         # When json.loads fails
         _LOGGER.exception("Error converting row to state: %s", row)
@@ -112,10 +113,10 @@ class RecorderRun(object):
             self.start = _INSTANCE.recording_start
             self.closed_incorrect = False
         else:
-            self.start = datetime.fromtimestamp(row[1])
+            self.start = datetime.utcfromtimestamp(row[1])
 
             if row[2] is not None:
-                self.end = datetime.fromtimestamp(row[2])
+                self.end = datetime.utcfromtimestamp(row[2])
 
             self.closed_incorrect = bool(row[3])
 
@@ -243,6 +244,14 @@ class Recorder(threading.Thread):
                 cur = self.conn.cursor()
 
                 if data is not None:
+                    if type(data) is tuple:
+                        new_data = []
+                        for i,k in enumerate(data):
+                            if type(k) is datetime:
+                                new_data.append(utc_to_timestamp(k))
+                            else:
+                                new_data.append(k)
+                        data = tuple(new_data)
                     cur.execute(sql_query, data)
                 else:
                     cur.execute(sql_query)
@@ -328,27 +337,6 @@ class Recorder(threading.Thread):
             cur.execute('CREATE INDEX states__entity_id ON states(entity_id)')
 
             save_migration(1)
-        
-        if migration_id < 2:
-            """ Convert old (local) timestamps to utc """
-            offset = math.ceil((datetime.now() - datetime.utcnow()).total_seconds())
-            self.query("""
-                UPDATE states SET last_changed = last_changed - ?,
-                last_updated = last_updated - ?,
-                created = created - ?
-            """, (offset, offset, offset))
-            
-            self.query("""
-                UPDATE events SET created = created - ?
-            """, (offset, ))
-            
-            self.query("""
-                UPDATE recorder_runs SET start = start - ?,
-                end = end - ?,
-                created = created - ?
-            """, (offset, offset, offset))
-            
-            save_migration(2)
 
     def _close_connection(self):
         """ Close connection to the database. """
