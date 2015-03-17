@@ -13,6 +13,7 @@ from datetime import datetime
 import time
 import json
 import atexit
+import math
 
 from homeassistant import Event, EventOrigin, State
 from homeassistant.remote import JSONEncoder
@@ -327,6 +328,27 @@ class Recorder(threading.Thread):
             cur.execute('CREATE INDEX states__entity_id ON states(entity_id)')
 
             save_migration(1)
+        
+        if migration_id < 2:
+            """ Convert old (local) timestamps to utc """
+            offset = math.ceil((datetime.now() - datetime.utcnow()).total_seconds())
+            self.query("""
+                UPDATE states SET last_changed = last_changed + ?,
+                last_updated = last_updated + ?,
+                created = created + ?
+            """, (offset, offset, offset))
+            
+            self.query("""
+                UPDATE events SET created = created + ?
+            """, (offset, ))
+            
+            self.query("""
+                UPDATE recorder_runs SET start = start + ?,
+                end = end + ?,
+                created = created + ?
+            """, (offset, offset, offset))
+            
+            save_migration(2)
 
     def _close_connection(self):
         """ Close connection to the database. """
