@@ -121,7 +121,7 @@ def setup(hass, config):
     def update_sun_state(now):
         """ Method to update the current state of the sun and
             set time of next setting and rising. """
-        utc_offset = datetime.utcnow() - datetime.now()
+        utc_offset = datetime.utcnow() - datetime.utcnow()
         utc_now = now + utc_offset
 
         observer = ephem.Observer()
@@ -155,7 +155,7 @@ def setup(hass, config):
         hass.track_point_in_time(update_sun_state,
                                  next_change + timedelta(seconds=1))
 
-    update_sun_state(datetime.now())
+    update_sun_state(datetime.utcnow())
 
     return True
 
@@ -203,7 +203,7 @@ class SunEventListener(ServiceEventListener):
         else:
             next_time = next_event + self.offset
 
-        while next_time < datetime.now() or \
+        while next_time < datetime.utcnow() or \
                 next_time.weekday() not in self.my_schedule.days:
             next_time = next_time + timedelta(days=1)
 

@@ -11,6 +11,7 @@ from homeassistant.helpers.device_component import DeviceComponent
 import homeassistant.util as util
 from homeassistant.helpers.device import Device
 from homeassistant.const import (
+    CONF_TEMPERATURE_UNIT, CELCIUS, FAHRENHEIT, TEMP_FAHRENHEIT, TEMP_CELCIUS,
     ATTR_ENTITY_ID, ATTR_TEMPERATURE, ATTR_UNIT_OF_MEASUREMENT,
     STATE_ON, STATE_OFF)
 
@@ -55,7 +56,7 @@ def setup(hass, config):
     """ Setup thermostats. """
     component = DeviceComponent(_LOGGER, DOMAIN, hass, SCAN_INTERVAL)
     component.setup(config)
-
+    
     def thermostat_service(service):
         """ Handles calls to the services. """
 
@@ -78,8 +79,11 @@ def setup(hass, config):
                     thermostat.turn_away_mode_off()
 
         elif service.service == SERVICE_SET_TEMPERATURE:
-            temperature = util.convert(
-                service.data.get(ATTR_TEMPERATURE), float)
+            temp = service.data.get(ATTR_TEMPERATURE)
+            if type(temp) is list:
+                temperature = util.convert(temp, tuple)
+            else:
+                temperature = util.convert(temp, float)
 
             if temperature is None:
                 return
@@ -98,7 +102,6 @@ def setup(hass, config):
 
     return True
 
-
 class ThermostatDevice(Device):
     """ Represents a thermostat within Home Assistant. """
 
@@ -111,8 +114,10 @@ class ThermostatDevice(Device):
 
     @property
     def unit_of_measurement(self):
-        """ Returns the unit of measurement. """
-        return ""
+        if self.hass.settings.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
+            return TEMP_FAHRENHEIT
+        else:
+            return TEMP_CELCIUS
 
     @property
     def device_state_attributes(self):
@@ -141,12 +146,32 @@ class ThermostatDevice(Device):
 
     @property
     def current_temperature(self):
-        """ Returns the current temperature. """
+        """ Returns the current temperature (formatted). """
+        if self.hass.settings.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
+            return util.c_to_f(self._current_temperature)
+        else:
+            return self._current_temperature
+        
+    @property    
+    def _current_temperature(self):
+        """ Returns the current temperature (in celcius). """
         raise NotImplementedError
 
     @property
     def target_temperature(self):
-        """ Returns the temperature we try to reach. """
+        """ Returns the temperature we try to reach (formated). """
+        target = self._target_temperature
+        if self.hass.settings.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
+            target = util.c_to_f(target)
+        
+        if type(target) is tuple:
+            target = list(target)
+        
+        return target
+        
+    @property    
+    def _target_temperature(self):
+        """ Returns the temperature we try to reach (in celcius). """
         raise NotImplementedError
 
     @property
@@ -157,7 +182,13 @@ class ThermostatDevice(Device):
         """
         return None
 
-    def set_temperate(self, temperature):
+    def set_temperature(self, temperature):
+        if self.hass.settings.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
+            return self._set_temperature(util.f_to_c(temperature))
+        else:
+            return self._set_temperature(temperature)
+        
+    def _set_temperature(self, temperature):
         """ Set new target temperature. """
         pass
 

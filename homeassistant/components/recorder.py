@@ -13,6 +13,7 @@ from datetime import datetime
 import time
 import json
 import atexit
+import math
 
 from homeassistant import Event, EventOrigin, State
 from homeassistant.remote import JSONEncoder
@@ -164,7 +165,7 @@ class Recorder(threading.Thread):
         self.queue = queue.Queue()
         self.quit_object = object()
         self.lock = threading.Lock()
-        self.recording_start = datetime.now()
+        self.recording_start = datetime.utcnow()
 
         def start_recording(event):
             """ Start recording. """
@@ -207,7 +208,7 @@ class Recorder(threading.Thread):
 
     def record_state(self, entity_id, state):
         """ Save a state to the database. """
-        now = datetime.now()
+        now = datetime.utcnow()
 
         if state is None:
             info = (entity_id, '', "{}", now, now, now)
@@ -225,7 +226,7 @@ class Recorder(threading.Thread):
         """ Save an event to the database. """
         info = (
             event.event_type, json.dumps(event.data, cls=JSONEncoder),
-            str(event.origin), datetime.now()
+            str(event.origin), datetime.utcnow()
         )
 
         self.query(
@@ -279,7 +280,7 @@ class Recorder(threading.Thread):
         def save_migration(migration_id):
             """ Save and commit a migration to the database. """
             cur.execute('INSERT INTO schema_version VALUES (?, ?)',
-                        (migration_id, datetime.now()))
+                        (migration_id, datetime.utcnow()))
             self.conn.commit()
             _LOGGER.info("Database migrated to version %d", migration_id)
 
@@ -327,6 +328,27 @@ class Recorder(threading.Thread):
             cur.execute('CREATE INDEX states__entity_id ON states(entity_id)')
 
             save_migration(1)
+        
+        if migration_id < 2:
+            """ Convert old (local) timestamps to utc """
+            offset = math.ceil((datetime.now() - datetime.utcnow()).total_seconds())
+            self.query("""
+                UPDATE states SET last_changed = last_changed - ?,
+                last_updated = last_updated - ?,
+                created = created - ?
+            """, (offset, offset, offset))
+            
+            self.query("""
+                UPDATE events SET created = created - ?
+            """, (offset, ))
+            
+            self.query("""
+                UPDATE recorder_runs SET start = start - ?,
+                end = end - ?,
+                created = created - ?
+            """, (offset, offset, offset))
+            
+            save_migration(2)
 
     def _close_connection(self):
         """ Close connection to the database. """
@@ -344,13 +366,13 @@ class Recorder(threading.Thread):
 
         self.query(
             "INSERT INTO recorder_runs (start, created) VALUES (?, ?)",
-            (self.recording_start, datetime.now()))
+            (self.recording_start, datetime.utcnow()))
 
     def _close_run(self):
         """ Save end time for current run. """
         self.query(
             "UPDATE recorder_runs SET end=? WHERE start=?",
-            (datetime.now(), self.recording_start))
+            (datetime.utcnow(), self.recording_start))
 
 
 def _adapt_datetime(datetimestamp):

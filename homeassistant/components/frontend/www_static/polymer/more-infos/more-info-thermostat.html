@@ -27,11 +27,13 @@
   <div>
     <div>
       <div>Target Temperature</div>
-      <paper-slider
-        min="{{tempMin}}" max="{{tempMax}}"
-        value='{{targetTemperatureSliderValue}}' pin
-        on-change="{{targetTemperatureSliderChanged}}">
-      </paper-slider>
+      <template repeat="{{targetValue, i in targetTemperatureSliderValue}}">
+        <paper-slider
+          min="{{tempMin}}" max="{{tempMax}}"
+          value='{{targetValue}}' pin
+          on-change="{{targetTemperatureSliderChanged}}">
+        </paper-slider>
+      </template> 
     </div>
 
     <div class='away-mode-toggle'>
@@ -60,22 +62,36 @@ Polymer({
   },
 
   stateObjChanged: function(oldVal, newVal) {
-    this.targetTemperatureSliderValue = this.stateObj.state;
+    this.targetTemperatureSliderValue = JSON.parse(this.stateObj.state);
+    if (typeof this.targetTemperatureSliderValue !== 'object') {
+    	this.targetTemperatureSliderValue = [this.targetTemperatureSliderValue]
+    }
 
     if (this.stateObj.attributes.unit_of_measurement === constants.UNIT_TEMP_F) {
-      this.tempMin = 45;
-      this.tempMax = 95;
+      this.tempMin = 50;
+      this.tempMax = 90;
     } else {
-      this.tempMin = 7;
-      this.tempMax = 35;
+      this.tempMin = 9;
+      this.tempMax = 32;
     }
   },
 
   targetTemperatureSliderChanged: function(ev, details, target) {
-    var temp = parseInt(target.value);
-
-    if(isNaN(temp)) return;
-
+	var temp;
+	var sliders = target.parentElement.getElementsByTagName('paper-slider');
+	if(sliders.length > 1) {
+		var min = parseInt(sliders[0].value);
+		var max = parseInt(sliders[1].value);
+		if(isNaN(min) || isNaN(max)) return;
+		if(min > max) min = max - 1;
+		if(max < min) max = min + 1;
+		temp = [min, max];
+	} else {
+	    temp = parseInt(target.value);
+	    	
+	    if(isNaN(temp)) return;
+	}
+	
     serviceActions.callService("thermostat", "set_temperature", {
       entity_id: this.stateObj.entityId,
       temperature: temp

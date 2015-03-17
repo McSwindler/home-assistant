@@ -113,7 +113,7 @@ class DeviceTracker(object):
             """ Reload known devices file. """
             self._read_known_devices_file()
 
-            self.update_devices(datetime.now())
+            self.update_devices(datetime.utcnow())
 
             dev_group.update_tracked_entity_ids(self.device_entity_ids)
 

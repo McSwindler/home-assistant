@@ -120,7 +120,7 @@ def _api_last_5_states(handler, path_match, data):
 def _api_history_period(handler, path_match, data):
     """ Return history over a period of time. """
     # 1 day for now..
-    start_time = datetime.now() - timedelta(seconds=86400)
+    start_time = datetime.utcnow() - timedelta(seconds=86400)
 
     entity_id = data.get('filter_entity_id')
 

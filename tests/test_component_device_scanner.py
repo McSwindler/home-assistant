@@ -116,7 +116,7 @@ class TestComponentsDeviceTracker(unittest.TestCase):
         dev2 = device_tracker.ENTITY_ID_FORMAT.format('device_2')
         dev3 = device_tracker.ENTITY_ID_FORMAT.format('DEV3')
 
-        now = datetime.now()
+        now = datetime.utcnow()
 
         # Device scanner scans every 12 seconds. We need to sync our times to
         # be every 12 seconds or else the time_changed event will be ignored.

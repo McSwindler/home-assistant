@@ -87,7 +87,7 @@ class NmapDeviceScanner(object):
             Returns True if successful, False otherwise. """
         try:
             results = NmapParser.parse(stdout)
-            now = datetime.now()
+            now = datetime.utcnow()
             self.last_results = []
             for host in results.hosts:
                 if host.is_up():
@@ -122,7 +122,7 @@ class NmapDeviceScanner(object):
             options = "-F"
             exclude_targets = set()
             if self.home_interval:
-                now = datetime.now()
+                now = datetime.utcnow()
                 for host in self.last_results:
                     if host.last_update + self.home_interval > now:
                         exclude_targets.add(host)

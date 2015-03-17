@@ -6,9 +6,10 @@ MATCH_ALL = '*'
 DEVICE_DEFAULT_NAME = "Unnamed Device"
 
 # #### CONFIG ####
+CONF_SETTINGS = "settings"
 CONF_LATITUDE = "latitude"
 CONF_LONGITUDE = "longitude"
-CONF_UNIT = "unit"
+CONF_TEMPERATURE_UNIT = "temperature_unit"
 
 CONF_PLATFORM = "platform"
 CONF_HOST = "host"
@@ -65,6 +66,8 @@ ATTR_UNIT_OF_MEASUREMENT = "unit_of_measurement"
 ATTR_TEMPERATURE = "temperature"
 TEMP_CELCIUS = "°C"
 TEMP_FAHRENHEIT = "°F"
+CELCIUS = "C"
+FAHRENHEIT = "F"
 
 # Contains the information that is discovered
 ATTR_DISCOVERED = "discovered"
