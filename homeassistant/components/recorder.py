@@ -333,19 +333,19 @@ class Recorder(threading.Thread):
             """ Convert old (local) timestamps to utc """
             offset = math.ceil((datetime.now() - datetime.utcnow()).total_seconds())
             self.query("""
-                UPDATE states SET last_changed = last_changed + ?,
-                last_updated = last_updated + ?,
-                created = created + ?
+                UPDATE states SET last_changed = last_changed - ?,
+                last_updated = last_updated - ?,
+                created = created - ?
             """, (offset, offset, offset))
             
             self.query("""
-                UPDATE events SET created = created + ?
+                UPDATE events SET created = created - ?
             """, (offset, ))
             
             self.query("""
-                UPDATE recorder_runs SET start = start + ?,
-                end = end + ?,
-                created = created + ?
+                UPDATE recorder_runs SET start = start - ?,
+                end = end - ?,
+                created = created - ?
             """, (offset, offset, offset))
             
             save_migration(2)
