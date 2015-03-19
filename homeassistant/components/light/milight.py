@@ -6,9 +6,14 @@ Configuration:
 light:
     platform: milight
     host: YOUR_MILIGHT_IP
+    port: YOUR_MILIGHT_PORT (defaults to 8899)
     groups:
         1:
             name: Living Room
+            types:
+              - rgbw
+              - rgb
+              - white
         2:
             name: Bedroom
         3:
@@ -52,7 +57,6 @@ TODO:
 
 import logging
 import socket
-from colorsys import rgb_to_hls
 from math import ceil
 from datetime import timedelta
 from urllib.parse import urlparse
@@ -60,7 +64,7 @@ from urllib.parse import urlparse
 from homeassistant.loader import get_component
 import homeassistant.util as util
 from homeassistant.helpers.device import ToggleDevice
-from homeassistant.const import CONF_HOST
+from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.components.light import (ATTR_BRIGHTNESS, ATTR_XY_COLOR, ATTR_RGB_COLOR)
 
 
@@ -71,18 +75,19 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     """ Gets the Hue lights. """
     try:
         # pylint: disable=unused-variable
-        import ledcontroller  # noqa
+        import milight  # noqa
     except ImportError:
-        _LOGGER.exception("Error while importing dependency ledcontroller.")
+        _LOGGER.exception("Error while importing dependency milight.")
 
         return
 
     host = config.get(CONF_HOST, None)
+    port = config.get(CONF_PORT, 8899)
 
     try:
-        bridge = ledcontroller.LedController(host)
+        bridge = milight.MiLight({'host': host, 'port': port})
     except ConnectionRefusedError:  # Wrong host was given
-        _LOGGER.exception("Error connecting to the milight bridge at %s", host)
+        _LOGGER.exception("Error connecting to the milight bridge at %s:%d", host, port)
 
         return
 
@@ -94,7 +99,9 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
         info = infos.get(group_id, {'name': 'Group {}'.format(group_id)})
         if info.get('exclude', False):
             continue
-        groups.append(MiGroup(group_id, info, bridge))
+        types = info.get('types', ['rgbw'])
+        light = milight.LightBulb(types)
+        groups.append(MiGroup(group_id, info, bridge, light))
 
     add_devices_callback(groups)
 
@@ -102,14 +109,15 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
 class MiGroup(ToggleDevice):
     """ Represents a Milight Group """
 
-    def __init__(self, group_id, info, bridge):
+    def __init__(self, group_id, info, bridge, light):
         self.group_id = group_id
         self.info = info
         self.bridge = bridge
+        self.light = light
 
     @property
     def unique_id(self):
-        """ Returns the id of this Hue light """
+        """ Returns the id of this MiLight """
         return "{}.{}".format(
             self.__class__, self.info.get('name'))
 
@@ -135,12 +143,12 @@ class MiGroup(ToggleDevice):
 
     def turn_on(self, **kwargs):
         """ Turn the specified or all lights on. """
-        self.bridge.on(self.group_id)
+        self.bridge.send(self.light.on(self.group_id))
         self.info['on'] = True
 
         if ATTR_BRIGHTNESS in kwargs:
-            level = float(kwargs[ATTR_BRIGHTNESS]) / 255
-            self.bridge.set_brightness(level, self.group_id)
+            level = int(float(kwargs[ATTR_BRIGHTNESS]) / 255 * 100)
+            self.bridge.send(self.light.brightness(level, self.group_id))
             self.info['brightness'] = kwargs[ATTR_BRIGHTNESS]
 
         if ATTR_XY_COLOR in kwargs:
@@ -148,17 +156,11 @@ class MiGroup(ToggleDevice):
             
         if ATTR_RGB_COLOR in kwargs:
             rgb = kwargs[ATTR_RGB_COLOR]
-            hls = rgb_to_hls(float(rgb[0])/255, 
-                                      float(rgb[1])/255,
-                                      float(rgb[2])/255)
-            if hls[1] > 0.95:
-                self.bridge.set_color('white', self.group_id)
-            else:
-                self.bridge.set_color(ceil(hls[0] * 255), self.group_id)
+            self.bridge.send(self.light.color(milight.color_from_rgb(*rgb)))
 
     def turn_off(self, **kwargs):
         """ Turn the specified or all lights off. """
-        self.bridge.off(self.group_id)
+        self.bridge.send(self.light.off(self.group_id))
         self.info['on'] = False
 
     def update(self):

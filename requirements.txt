@@ -14,7 +14,7 @@ pyephem>=3.7
 phue>=0.8
 
 # lights.milight
-ledcontroller>=1.1.0
+milight>=0.5
 
 # media_player.cast
 pychromecast>=0.5
