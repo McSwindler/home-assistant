@@ -66,9 +66,13 @@ import homeassistant.util as util
 from homeassistant.helpers.device import ToggleDevice
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.components.light import (ATTR_BRIGHTNESS, ATTR_XY_COLOR, ATTR_RGB_COLOR)
-
-
 _LOGGER = logging.getLogger(__name__)
+try:
+    from milight import color_from_rgb
+except:
+    _LOGGER.exception("Error while importing dependency milight.")
+
+
 
 
 def setup_platform(hass, config, add_devices_callback, discovery_info=None):
@@ -156,7 +160,7 @@ class MiGroup(ToggleDevice):
             
         if ATTR_RGB_COLOR in kwargs:
             rgb = kwargs[ATTR_RGB_COLOR]
-            self.bridge.send(self.light.color(milight.color_from_rgb(*rgb)))
+            self.bridge.send(self.light.color(color_from_rgb(*rgb)))
 
     def turn_off(self, **kwargs):
         """ Turn the specified or all lights off. """
