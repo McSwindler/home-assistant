@@ -160,7 +160,10 @@ class MiGroup(ToggleDevice):
             
         if ATTR_RGB_COLOR in kwargs:
             rgb = kwargs[ATTR_RGB_COLOR]
-            self.bridge.send(self.light.color(color_from_rgb(*rgb)))
+            color = color_from_rgb(*rgb)
+            if color < 0:
+                self.info['on'] = False
+            self.bridge.send(self.light.color(color))
 
     def turn_off(self, **kwargs):
         """ Turn the specified or all lights off. """

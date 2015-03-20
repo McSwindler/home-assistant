@@ -114,7 +114,7 @@ class ThermostatDevice(Device):
 
     @property
     def unit_of_measurement(self):
-        if self.hass.settings.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
+        if self.hass.units.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
             return TEMP_FAHRENHEIT
         else:
             return TEMP_CELCIUS
@@ -147,7 +147,7 @@ class ThermostatDevice(Device):
     @property
     def current_temperature(self):
         """ Returns the current temperature (formatted). """
-        if self.hass.settings.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
+        if self.hass.units.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
             return util.c_to_f(self._current_temperature)
         else:
             return self._current_temperature
@@ -161,7 +161,7 @@ class ThermostatDevice(Device):
     def target_temperature(self):
         """ Returns the temperature we try to reach (formated). """
         target = self._target_temperature
-        if self.hass.settings.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
+        if self.hass.units.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
             target = util.c_to_f(target)
         
         if type(target) is tuple:
@@ -183,7 +183,7 @@ class ThermostatDevice(Device):
         return None
 
     def set_temperature(self, temperature):
-        if self.hass.settings.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
+        if self.hass.units.get(CONF_TEMPERATURE_UNIT, CELCIUS) == FAHRENHEIT:
             return self._set_temperature(util.f_to_c(temperature))
         else:
             return self._set_temperature(temperature)

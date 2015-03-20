@@ -6,10 +6,10 @@ MATCH_ALL = '*'
 DEVICE_DEFAULT_NAME = "Unnamed Device"
 
 # #### CONFIG ####
-CONF_SETTINGS = "settings"
 CONF_LATITUDE = "latitude"
 CONF_LONGITUDE = "longitude"
-CONF_TEMPERATURE_UNIT = "temperature_unit"
+CONF_UNITS = "units"
+CONF_TEMPERATURE_UNIT = "temperature"
 
 CONF_PLATFORM = "platform"
 CONF_HOST = "host"

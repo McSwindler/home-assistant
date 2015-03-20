@@ -22,7 +22,7 @@ import homeassistant.util as util
 from homeassistant.helpers import extract_entity_ids
 from homeassistant.loader import get_component
 from homeassistant.const import (
-    ATTR_ENTITY_ID, SERVICE_TURN_ON, SERVICE_TURN_OFF)
+    ATTR_ENTITY_ID, SERVICE_TURN_ON, SERVICE_TURN_OFF, CONF_UNITS)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,6 +71,7 @@ def turn_off(hass, entity_id=None, **service_data):
 
 
 def setup(hass, config):
+    hass.units = config.get(ha.DOMAIN, {}).get(CONF_UNITS, {})
     """ Setup general services related to homeassistant. """
 
     def handle_turn_service(service):

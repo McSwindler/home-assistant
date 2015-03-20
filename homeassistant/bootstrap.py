@@ -20,7 +20,7 @@ import homeassistant
 import homeassistant.loader as loader
 import homeassistant.components as core_components
 import homeassistant.components.group as group
-from homeassistant.const import (EVENT_COMPONENT_LOADED, CONF_SETTINGS)
+from homeassistant.const import EVENT_COMPONENT_LOADED
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,9 +82,6 @@ def from_config_dict(config, hass=None):
     # Convert values to dictionaries if they are None
     config = defaultdict(
         dict, {key: value or {} for key, value in config.items()})
-    
-    # Setup global settings
-    hass.settings = config.pop(CONF_SETTINGS, {})
 
     # Filter out the repeating and common config section [homeassistant]
     components = (key for key in config.keys()

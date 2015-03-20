@@ -50,8 +50,8 @@ class HomeAssistant(object):
         self.services = ServiceRegistry(self.bus, pool)
         self.states = StateMachine(self.bus)
         
-        # Global Settings dict
-        self.settings = {}
+        # Global Units dict
+        self.units = {}
 
         # List of loaded components
         self.components = []
